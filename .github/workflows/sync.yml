@@ -38,6 +38,11 @@ jobs:
           else
             echo "conflicts=false" >> $GITHUB_OUTPUT
           fi
+          
+      - name: Configure Git identity
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
 
       - name: Commit merge if no conflicts
         if: steps.conflicts_master.outputs.conflicts == 'false'
@@ -98,6 +103,11 @@ jobs:
           else
             echo "conflicts=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
 
       - name: Commit merge if no conflicts
         if: steps.conflicts_dev.outputs.conflicts == 'false'
