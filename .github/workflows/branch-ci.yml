@@ -216,6 +216,7 @@ jobs:
 
       - name: Generate build timestamp
         run: |
+          export TZ="Europe/Paris"
           BUILD_TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
           echo "BUILD_TIMESTAMP=$BUILD_TIMESTAMP" >> $GITHUB_ENV
 
@@ -292,16 +293,18 @@ jobs:
               -H "Authorization: Bearer $ACCESS_TOKEN" \
               -F "metadata={\"name\":\"$NAME\", \"parents\":[\"$VERSION_FOLDER_ID\"]};type=application/json;charset=UTF-8" \
               -F "file=@$FILE;type=application/vnd.android.package-archive" \
-              "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart")
+              "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id")
 
-            HTTP_CODE="${RESPONSE: -3}"
-            if [[ "$HTTP_CODE" != "200" && "$HTTP_CODE" != "201" ]]; then
-              echo "❌ Upload failed with HTTP status: $HTTP_CODE"
-              cat /tmp/gdrive_response.json
+            FILE_ID=$(echo "$RESPONSE" | jq -r '.id')
+
+            if [[ -z "$FILE_ID" || "$FILE_ID" == "null" ]]; then
+              echo "❌ Upload failed"
+              echo "$RESPONSE"
               exit 1
             fi
 
-            echo "✅ Uploaded: $NAME"
+            echo "FILE_ID=$FILE_ID" >> $GITHUB_ENV
+            echo "✅ Uploaded: $NAME (ID: $FILE_ID)"
           }
 
           upload_to_gdrive "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk"
@@ -309,10 +312,18 @@ jobs:
 
 
           echo "🎉 APKs successfully uploaded to Google Drive!"
+
+      - name: Build download URL
+        run: |
+          DOWNLOAD_URL="https://drive.google.com/file/d/${FILE_ID}/view?usp=sharing"
+          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
       
       - name: Notify Discord about new APK
         run: |
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d "{\"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\"}" \
+               -d "{
+                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n⬇️ Téléchargement : ${{ env.DOWNLOAD_URL }}\"
+                   }" \
                ${{ secrets.DISCORD_WEBHOOK_BUILD }}
+
