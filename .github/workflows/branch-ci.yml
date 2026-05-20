@@ -305,28 +305,39 @@ jobs:
               exit 1
             fi
 
-          echo "FILE_ID=$FILE_ID" >> $GITHUB_ENV
+          if [[ "$3" == "full" ]]; then
+            echo "FULL_FILE_ID=$FILE_ID" >> $GITHUB_ENV
+          else
+            echo "WEAR_FILE_ID=$FILE_ID" >> $GITHUB_ENV
+          fi
+
           echo "✅ Uploaded: $NAME (ID: $FILE_ID)"
 
           }
 
-          upload_to_gdrive "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk"
-          upload_to_gdrive "aaps-wear-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "aaps-wear-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk"
+          upload_to_gdrive "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "full"
+          upload_to_gdrive "aaps-wear-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "aaps-wear-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "wear"
+
 
 
           echo "🎉 APKs successfully uploaded to Google Drive!"
 
-      - name: Build download URL
+      - name: Build download URLs
         run: |
-          DOWNLOAD_URL="https://drive.google.com/file/d/${FILE_ID}/view?usp=sharing"
-          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+          FULL_URL="https://drive.google.com/file/d/${FULL_FILE_ID}/view?usp=sharing"
+          WEAR_URL="https://drive.google.com/file/d/${WEAR_FILE_ID}/view?usp=sharing"
+
+          echo "FULL_URL=$FULL_URL" >> $GITHUB_ENV
+          echo "WEAR_URL=$WEAR_URL" >> $GITHUB_ENV
+
       
       - name: Notify Discord about new APK
         run: |
           curl -H "Content-Type: application/json" \
                -X POST \
                -d "{
-                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n⬇️ Téléchargement : ${{ env.DOWNLOAD_URL }}\"
+                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n⬇️ Téléchargement Full : ${{ env.FULL_URL }}\"
                    }" \
                ${{ secrets.DISCORD_WEBHOOK_BUILD }}
+
 
