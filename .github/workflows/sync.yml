@@ -1,0 +1,127 @@
+name: Ultimate Multi-Branch Sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync-master:
+    name: Sync master branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/nightscout/AndroidAPS.git
+          git fetch upstream
+
+      - name: Create sync branch
+        run: |
+          git checkout -B sync-master origin/master
+          git merge upstream/master --no-commit --no-ff || true
+
+      - name: Remove upstream workflow changes
+        run: |
+          git restore --staged .github/workflows || true
+          git restore .github/workflows || true
+
+      - name: Detect conflicts
+        id: conflicts_master
+        run: |
+          if git ls-files -u | grep -q .; then
+            echo "conflicts=true" >> $GITHUB_OUTPUT
+          else
+            echo "conflicts=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit merge if no conflicts
+        if: steps.conflicts_master.outputs.conflicts == 'false'
+        run: |
+          if ! git diff --cached --quiet; then
+            git commit -m "Sync master with upstream (excluding workflows)"
+          fi
+
+      - name: Push changes
+        if: steps.conflicts_master.outputs.conflicts == 'false'
+        run: |
+          if ! git diff origin/master..sync-master --quiet; then
+            git push origin sync-master:master
+          fi
+
+      - name: Create PR on conflict
+        if: steps.conflicts_master.outputs.conflicts == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: conflict-sync-master
+          title: "⚠️ Conflits détectés sur master"
+          body: |
+            Des conflits ont été détectés lors de la synchronisation automatique de la branche **master**.
+            Branche de travail : `sync-master`
+          base: master
+          delete-branch: true
+
+  sync-dev:
+    name: Sync dev branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/nightscout/AndroidAPS.git
+          git fetch upstream
+
+      - name: Create sync branch
+        run: |
+          git checkout -B sync-dev origin/dev
+          git merge upstream/dev --no-commit --no-ff || true
+
+      - name: Remove upstream workflow changes
+        run: |
+          git restore --staged .github/workflows || true
+          git restore .github/workflows || true
+
+      - name: Detect conflicts
+        id: conflicts_dev
+        run: |
+          if git ls-files -u | grep -q .; then
+            echo "conflicts=true" >> $GITHUB_OUTPUT
+          else
+            echo "conflicts=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit merge if no conflicts
+        if: steps.conflicts_dev.outputs.conflicts == 'false'
+        run: |
+          if ! git diff --cached --quiet; then
+            git commit -m "Sync dev with upstream (excluding workflows)"
+          fi
+
+      - name: Push changes
+        if: steps.conflicts_dev.outputs.conflicts == 'false'
+        run: |
+          if ! git diff origin/dev..sync-dev --quiet; then
+            git push origin sync-dev:dev
+          fi
+
+      - name: Create PR on conflict
+        if: steps.conflicts_dev.outputs.conflicts == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: conflict-sync-dev
+          title: "⚠️ Conflits détectés sur dev"
+          body: |
+            Des conflits ont été détectés lors de la synchronisation automatique de la branche **dev**.
+            Branche de travail : `sync-dev`
+          base: dev
+          delete-branch: true
