@@ -86,7 +86,7 @@ class TizenPlugin @Inject constructor(
     private val disposable = CompositeDisposable()
     private var scope: CoroutineScope? = null
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         val newScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope = newScope
@@ -107,7 +107,7 @@ class TizenPlugin @Inject constructor(
             .launchIn(newScope)
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         disposable.clear()
         scope?.cancel()
         scope = null

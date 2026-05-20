@@ -236,7 +236,7 @@ class UnscentedKalmanFilterPlugin @Inject constructor(
         loadPersistedParameters()
     }
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         val newScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope = newScope
@@ -409,7 +409,7 @@ class UnscentedKalmanFilterPlugin @Inject constructor(
      *
      * Called automatically by the plugin framework.
      */
-    override suspend fun onStop() {
+    override fun onStop() {
         scope?.cancel()
         scope = null
         super.onStop()

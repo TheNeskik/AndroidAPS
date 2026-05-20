@@ -55,7 +55,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import app.aaps.core.ui.R as CoreUiR
 
@@ -153,7 +152,7 @@ open class DanaOverviewViewModel @Inject constructor(
     fun onRefreshClick() {
         aapsLogger.debug(LTag.PUMP, "Clicked connect to pump")
         danaPump.reset()
-        viewModelScope.launch { commandQueue.readStatus(rh.gs(CoreUiR.string.clicked_connect_to_pump)) }
+        commandQueue.readStatus(rh.gs(CoreUiR.string.clicked_connect_to_pump), null)
     }
 
     fun onHistoryClick() {
@@ -298,7 +297,7 @@ open class DanaOverviewViewModel @Inject constructor(
         val reservoirLevel = when {
             ch.fromPump(PumpInsulin(reservoir)) <= 20.0 -> StatusLevel.CRITICAL
             ch.fromPump(PumpInsulin(reservoir)) <= 50.0 -> StatusLevel.WARNING
-            else                                        -> StatusLevel.NORMAL
+            else              -> StatusLevel.NORMAL
         }
 
         val isConfigured = activePump.isConfigured()

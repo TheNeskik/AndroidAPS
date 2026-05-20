@@ -113,7 +113,7 @@ class EquilPumpPlugin @Inject constructor(
 
     private var scope: CoroutineScope? = null
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         equilManager.init()
 
@@ -159,7 +159,7 @@ class EquilPumpPlugin @Inject constructor(
         pumpDescription = PumpDescription().fillFor(pumpType)
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         super.onStop()
         aapsLogger.debug(LTag.PUMPCOMM, "EquilPumpPlugin.onStop()")
         scope?.cancel()

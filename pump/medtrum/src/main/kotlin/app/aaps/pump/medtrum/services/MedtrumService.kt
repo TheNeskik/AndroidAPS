@@ -781,11 +781,12 @@ class MedtrumService : DaggerService(), MedtrumBleCallback {
                     soundRes = app.aaps.core.ui.R.raw.alarm
                 )
                 // Get pump status, use readStatus here as for loadEvents() we cannot be sure callback is executed
-                scope.launch {
-                    commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.device_changed))
-                    // Make sure a 0 temp is set
-                    medtrumPump.setFakeTBRIfNotSet()
-                }
+                commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.device_changed), object : Callback() {
+                    override fun run() {
+                        // Make sure a 0 temp is set
+                        medtrumPump.setFakeTBRIfNotSet()
+                    }
+                })
             }
         }
     }

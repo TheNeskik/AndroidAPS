@@ -208,7 +208,7 @@ class NSClientV3Plugin @Inject constructor(
         }
     }
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         handler = Handler(HandlerThread(this::class.simpleName + "Handler").also { it.start() }.looper)
 
@@ -302,7 +302,7 @@ class NSClientV3Plugin @Inject constructor(
         }
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         handler?.removeCallbacksAndMessages(null)
         handler?.looper?.quit()
         handler = null

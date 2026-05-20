@@ -97,7 +97,7 @@ class DanaRKoreanPlugin @Inject constructor(
         pumpDescription.fillFor(PumpType.DANA_R_KOREAN)
     }
 
-    override suspend fun onStart() {
+    override fun onStart() {
         context.bindService(Intent(context, DanaRKoreanExecutionService::class.java), mConnection, Context.BIND_AUTO_CREATE)
         val newScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope = newScope
@@ -113,7 +113,7 @@ class DanaRKoreanPlugin @Inject constructor(
         super.onStart()
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         scope?.cancel()
         scope = null
         context.unbindService(mConnection)

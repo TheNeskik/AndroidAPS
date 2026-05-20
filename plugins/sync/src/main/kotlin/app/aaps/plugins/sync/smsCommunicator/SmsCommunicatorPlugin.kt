@@ -189,7 +189,7 @@ class SmsCommunicatorPlugin @Inject constructor(
         )
     )
 
-    override suspend fun onStart() {
+    override fun onStart() {
         processSettings()
         super.onStart()
         val newScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -200,7 +200,7 @@ class SmsCommunicatorPlugin @Inject constructor(
             .launchIn(newScope)
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         scope?.cancel()
         scope = null
         super.onStop()

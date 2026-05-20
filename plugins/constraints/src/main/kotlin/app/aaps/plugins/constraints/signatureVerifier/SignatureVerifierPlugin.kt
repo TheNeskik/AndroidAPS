@@ -63,7 +63,7 @@ class SignatureVerifierPlugin @Inject constructor(
     private val lock: Any = arrayOfNulls<Any>(0)
     private var revokedCertsFile: File? = null
     private var revokedCerts: List<ByteArray>? = null
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         handler = Handler(HandlerThread(this::class.simpleName + "Handler").also { it.start() }.looper)
         revokedCertsFile = File(context.filesDir, "revoked_certs.txt")
@@ -80,7 +80,7 @@ class SignatureVerifierPlugin @Inject constructor(
         }
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         handler?.removeCallbacksAndMessages(null)
         handler?.looper?.quit()
         handler = null

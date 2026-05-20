@@ -17,6 +17,7 @@ import app.aaps.core.interfaces.logging.AAPSLogger
 import app.aaps.core.interfaces.logging.LTag
 import app.aaps.core.interfaces.pump.PumpInsulin
 import app.aaps.core.interfaces.pump.PumpRate
+import app.aaps.core.interfaces.queue.Callback
 import app.aaps.core.interfaces.queue.CommandQueue
 import app.aaps.core.interfaces.resources.ResourceHelper
 import app.aaps.core.interfaces.rx.bus.RxBus
@@ -57,8 +58,8 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Provider
-import app.aaps.core.ui.R as CoreUiR
 import app.aaps.pump.common.hw.rileylink.R as RileyLinkR
+import app.aaps.core.ui.R as CoreUiR
 
 sealed class MedtronicOverviewEvent {
     data object ShowHistory : MedtronicOverviewEvent()
@@ -265,7 +266,7 @@ class MedtronicOverviewViewModel @Inject constructor(
         val tempBasalAmount = medtronicPumpStatus.tempBasalAmount?.let { PumpRate(it) } ?: return ""
         val startTime = medtronicPumpStatus.tempBasalStart ?: return ""
         val duration = medtronicPumpStatus.tempBasalDuration ?: return ""
-        return ch.basalTbrString(rate = tempBasalAmount, startTime = startTime, durationInMin = duration)
+        return ch.basalTbrString( rate = tempBasalAmount, startTime = startTime, durationInMin = duration)
     }
 
     private fun buildBattery(): Pair<String, StatusLevel> {
@@ -291,7 +292,7 @@ class MedtronicOverviewViewModel @Inject constructor(
         val level = when {
             ch.fromPump(remaining) <= 20.0 -> StatusLevel.CRITICAL
             ch.fromPump(remaining) <= 50.0 -> StatusLevel.WARNING
-            else                           -> StatusLevel.NORMAL
+            else              -> StatusLevel.NORMAL
         }
         return text to level
     }
@@ -383,7 +384,10 @@ class MedtronicOverviewViewModel @Inject constructor(
             return
         }
         medtronicPumpPlugin.resetStatusState()
-        viewModelScope.launch { commandQueue.readStatus(rh.gs(R.string.clicked_refresh)) }
+        commandQueue.readStatus(rh.gs(R.string.clicked_refresh), object : Callback() {
+            override fun run() { /* refresh button re-enabled via EventRefreshButtonState */
+            }
+        })
     }
 
     private fun emitNotConfiguredDialog() {

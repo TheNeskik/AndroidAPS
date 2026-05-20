@@ -40,14 +40,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.max
 import kotlin.time.ExperimentalTime
-import app.aaps.core.ui.R as CoreUiR
 import info.nightscout.comboctl.base.Tbr as ComboCtlTbr
 import info.nightscout.comboctl.main.Pump as ComboCtlPump
+import app.aaps.core.ui.R as CoreUiR
 
 sealed class ComboV2OverviewEvent {
     data object StartPairWizard : ComboV2OverviewEvent()
@@ -141,7 +140,7 @@ class ComboV2OverviewViewModel @Inject constructor(
     fun onRefreshClick() {
         aapsLogger.debug(LTag.PUMP, "Refresh button clicked")
         combov2Plugin.clearPumpErrorObservedFlag()
-        viewModelScope.launch { commandQueue.readStatus(rh.gs(CoreUiR.string.user_request)) }
+        commandQueue.readStatus(rh.gs(CoreUiR.string.user_request), null)
     }
 
     fun onPairClick() {

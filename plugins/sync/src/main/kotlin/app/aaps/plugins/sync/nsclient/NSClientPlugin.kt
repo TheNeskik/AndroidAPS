@@ -93,7 +93,7 @@ class NSClientPlugin @Inject constructor(
     val blockingReason: String
         get() = receiverDelegate.blockingReason
 
-    override suspend fun onStart() {
+    override fun onStart() {
         context.bindService(Intent(context, NSClientService::class.java), mConnection, Context.BIND_AUTO_CREATE)
         super.onStart()
         receiverDelegate.grabReceiversState()
@@ -103,7 +103,7 @@ class NSClientPlugin @Inject constructor(
             .launchIn(scope)
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         nsClientService?.destroy()
         if (nsClientService != null) context.unbindService(mConnection)
         scope.cancel()

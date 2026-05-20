@@ -2,7 +2,6 @@ package app.aaps.pump.danar.compose
 
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import app.aaps.core.interfaces.logging.AAPSLogger
 import app.aaps.core.interfaces.logging.LTag
 import app.aaps.core.interfaces.pump.PumpSync
@@ -25,7 +24,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class BondedDevice(val name: String, val address: String)
@@ -148,7 +146,7 @@ class DanaRPairWizardViewModel @Inject constructor(
 
         // Trigger connection
         pumpSync.connectNewPump(true)
-        viewModelScope.launch { commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.device_changed)) }
+        commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.device_changed), null)
     }
 
     fun goBack() {

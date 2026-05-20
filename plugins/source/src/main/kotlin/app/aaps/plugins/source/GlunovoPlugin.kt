@@ -84,13 +84,13 @@ class GlunovoPlugin @Inject constructor(
 
     private val disposable = CompositeDisposable()
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         handler = Handler(HandlerThread(this::class.java.simpleName + "Handler").also { it.start() }.looper)
         handler?.postDelayed(refreshLoop, T.secs(30).msecs()) // do not start immediately, app may be still starting
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         super.onStop()
         handler?.removeCallbacksAndMessages(null)
         handler?.looper?.quit()

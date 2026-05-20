@@ -14,7 +14,6 @@ import app.aaps.core.interfaces.queue.CommandQueue
 import app.aaps.core.interfaces.resources.ResourceHelper
 import app.aaps.core.keys.interfaces.NonPreferenceKey
 import app.aaps.core.keys.interfaces.Preferences
-import kotlinx.coroutines.delay
 
 /**
  * Add command queue to [PluginBaseWithPreferences]
@@ -30,16 +29,17 @@ abstract class PumpPluginBase(
 
     var handler: Handler? = null
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         assert(getType() == PluginType.PUMP)
         handler = Handler(HandlerThread(this::class.java.simpleName + "Handler").also { it.start() }.looper)
-        delay(6000)
-        if ((this as? Pump)?.isConfigured() != false)
-            commandQueue.readStatus(rh.gs(R.string.pump_driver_changed))
+        handler?.postDelayed({
+                                 if ((this as? Pump)?.isConfigured() != false)
+                                     commandQueue.readStatus(rh.gs(R.string.pump_driver_changed), null)
+                             }, 6000)
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         super.onStop()
         handler?.removeCallbacksAndMessages(null)
         handler?.looper?.quit()

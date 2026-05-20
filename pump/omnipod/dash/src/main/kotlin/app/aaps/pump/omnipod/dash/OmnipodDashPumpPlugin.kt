@@ -87,7 +87,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.rx3.await
 import kotlinx.coroutines.rx3.rxCompletable
@@ -236,7 +235,7 @@ class OmnipodDashPumpPlugin @Inject constructor(
             commandQueue.size() == 0 &&
             commandQueue.performing() == null
         ) {
-            pluginScope.launch { commandQueue.readStatus(rh.gs(R.string.unconfirmed_command)) }
+            commandQueue.readStatus(rh.gs(R.string.unconfirmed_command), null)
         }
     }
 
@@ -488,7 +487,7 @@ class OmnipodDashPumpPlugin @Inject constructor(
             }
     }
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         podStateManager.onStart()
         handler?.postDelayed(statusChecker, STATUS_CHECK_INTERVAL_MS)
@@ -504,7 +503,7 @@ class OmnipodDashPumpPlugin @Inject constructor(
         ).onEach { commandQueue.customCommand(CommandUpdateAlertConfiguration(), null) }.launchIn(newScope)
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         super.onStop()
         scope?.cancel()
         scope = null

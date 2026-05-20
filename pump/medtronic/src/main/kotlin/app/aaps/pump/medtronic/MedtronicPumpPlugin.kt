@@ -187,7 +187,7 @@ class MedtronicPumpPlugin @Inject constructor(
     private val busyTimestamps: MutableList<Long> = ArrayList()
     private var isBusy = false
 
-    override suspend fun onStart() {
+    override fun onStart() {
         aapsLogger.debug(LTag.PUMP, deviceID() + " started. (V2.0007)")
         serviceConnection = object : ServiceConnection {
             override fun onServiceDisconnected(name: ComponentName) {
@@ -230,7 +230,7 @@ class MedtronicPumpPlugin @Inject constructor(
         super.onStart()
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         scope?.cancel()
         scope = null
         super.onStop()

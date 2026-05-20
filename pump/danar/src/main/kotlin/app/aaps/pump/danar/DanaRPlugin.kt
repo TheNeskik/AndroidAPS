@@ -111,7 +111,7 @@ class DanaRPlugin @Inject constructor(
         pumpDescription.fillFor(PumpType.DANA_R)
     }
 
-    override suspend fun onStart() {
+    override fun onStart() {
         val intent = Intent(context, DanaRExecutionService::class.java)
         context.bindService(intent, mConnection, Context.BIND_AUTO_CREATE)
         val newScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -128,7 +128,7 @@ class DanaRPlugin @Inject constructor(
         super.onStart()
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         scope?.cancel()
         scope = null
         context.unbindService(mConnection)

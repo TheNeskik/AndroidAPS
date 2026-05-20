@@ -221,7 +221,7 @@ class OmnipodErosPumpPlugin @Inject constructor(
         }
     }
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
 
         serviceConnection = object : ServiceConnection {
@@ -401,7 +401,7 @@ class OmnipodErosPumpPlugin @Inject constructor(
         }
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         super.onStop()
         aapsLogger.debug(LTag.PUMP, "OmnipodPumpPlugin.onStop()")
         scope?.cancel()

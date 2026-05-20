@@ -49,12 +49,10 @@ import app.aaps.pump.insight.descriptors.InsightState
 import app.aaps.pump.insight.descriptors.OperatingMode
 import app.aaps.pump.insight.events.EventLocalInsightUpdateGUI
 import io.reactivex.rxjava3.disposables.CompositeDisposable
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import app.aaps.core.ui.R as CoreUiR
 
 private enum class InsightScreen { OVERVIEW, PAIR_WIZARD }
@@ -69,8 +67,7 @@ class InsightComposeContent(
     private val aapsSchedulers: AapsSchedulers,
     private val pumpSync: PumpSync,
     private val blePreCheck: BlePreCheck,
-    private val ch: ConcentrationHelper,
-    private val appScope: CoroutineScope
+    private val ch: ConcentrationHelper
 ) : ComposablePluginContent {
 
     @Composable
@@ -88,8 +85,7 @@ class InsightComposeContent(
                 commandQueue = commandQueue,
                 context = context,
                 aapsSchedulers = aapsSchedulers,
-                ch = ch,
-                appScope = appScope
+                ch = ch
             )
         }
 
@@ -252,8 +248,7 @@ internal class InsightOverviewState(
     private val commandQueue: CommandQueue,
     @Suppress("unused") private val context: Context,
     private val aapsSchedulers: AapsSchedulers,
-    private val ch: ConcentrationHelper,
-    private val appScope: CoroutineScope
+    private val ch: ConcentrationHelper
 ) {
 
     private val disposable = CompositeDisposable()
@@ -460,11 +455,12 @@ internal class InsightOverviewState(
                 onClick = {
                     refreshPending = true
                     refresh()
-                    appScope.launch {
-                        commandQueue.readStatus("InsightRefreshButton")
-                        refreshPending = false
-                        refresh()
-                    }
+                    commandQueue.readStatus("InsightRefreshButton", object : Callback() {
+                        override fun run() {
+                            refreshPending = false
+                            refresh()
+                        }
+                    })
                 }
             )
         )

@@ -48,7 +48,6 @@ import app.aaps.pump.danar.comm.MsgStatusBasic
 import app.aaps.pump.danar.comm.MsgStatusBolusExtended
 import app.aaps.pump.danar.comm.MsgStatusTempBasal
 import app.aaps.pump.danarkorean.DanaRKoreanPlugin
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -266,7 +265,7 @@ class DanaRExecutionService : AbstractDanaRExecutionService() {
                     return false
                 }
             } else {
-                runBlocking { commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.bolus_ok)) }
+                commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.bolus_ok), null)
             }
         }
         return !start.failed

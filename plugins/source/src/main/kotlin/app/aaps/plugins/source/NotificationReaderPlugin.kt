@@ -44,7 +44,7 @@ class NotificationReaderPlugin @Inject constructor(
     @Volatile var packageConfig: PackageConfig = loadPackageConfig()
         private set
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         Thread {
             updateDefinitionsFromRemote()

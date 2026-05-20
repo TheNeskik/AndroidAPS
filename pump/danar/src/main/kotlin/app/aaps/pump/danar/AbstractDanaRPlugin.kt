@@ -104,7 +104,7 @@ abstract class AbstractDanaRPlugin protected constructor(
     override var pumpDescription = PumpDescription()
         protected set
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         disposable += rxBus
             .toObservable(EventConfigBuilderChange::class.java)
@@ -121,7 +121,7 @@ abstract class AbstractDanaRPlugin protected constructor(
         danaPump.serialNumber = preferences.get(DanaStringNonKey.RName) // fill at start to allow password reset
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         super.onStop()
         scope?.cancel()
         scope = null

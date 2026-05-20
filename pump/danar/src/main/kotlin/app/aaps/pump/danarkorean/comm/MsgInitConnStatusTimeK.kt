@@ -5,7 +5,6 @@ import app.aaps.core.interfaces.logging.LTag
 import app.aaps.core.interfaces.notifications.NotificationId
 import app.aaps.pump.danar.comm.MessageBase
 import dagger.android.HasAndroidInjector
-import kotlinx.coroutines.runBlocking
 
 class MsgInitConnStatusTimeK(
     injector: HasAndroidInjector
@@ -27,7 +26,7 @@ class MsgInitConnStatusTimeK(
             pumpSync.connectNewPump()
             //If profile coming from pump, switch it as well
             configBuilder.storeSettings("ChangingKoreanDanaDriver")
-            runBlocking { commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.pump_driver_change)) } // force new connection
+            commandQueue.readStatus(rh.gs(app.aaps.core.ui.R.string.pump_driver_change), null) // force new connection
             return
         }
         val time = dateTimeSecFromBuff(bytes, 0)

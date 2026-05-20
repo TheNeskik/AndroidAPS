@@ -95,7 +95,7 @@ class TidepoolPlugin @Inject constructor(
 
     private val isAllowed get() = receiverDelegate.allowed
 
-    override suspend fun onStart() {
+    override fun onStart() {
         super.onStart()
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         receiverDelegate.connectivityStatusFlow
@@ -134,7 +134,7 @@ class TidepoolPlugin @Inject constructor(
         authFlowOut.initAuthState()
     }
 
-    override suspend fun onStop() {
+    override fun onStop() {
         scope.cancel()
         disposable.clear()
         super.onStop()
