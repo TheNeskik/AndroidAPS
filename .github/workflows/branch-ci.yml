@@ -308,3 +308,10 @@ jobs:
           upload_to_gdrive "aaps-wear-${VERSION}${VERSION_SUFFIX}.apk" "aaps-wear-${VERSION}${VERSION_SUFFIX}.apk"
 
           echo "🎉 APKs successfully uploaded to Google Drive!"
+      
+      - name: Notify Discord about new APK
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_BUILD }}
