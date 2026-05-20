@@ -288,23 +288,26 @@ jobs:
             fi
 
             echo "⬆️ Uploading $FILE as $NAME to Google Drive..."
-            RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/gdrive_response.json \
-              -X POST \
-              -H "Authorization: Bearer $ACCESS_TOKEN" \
-              -F "metadata={\"name\":\"$NAME\", \"parents\":[\"$VERSION_FOLDER_ID\"]};type=application/json;charset=UTF-8" \
-              -F "file=@$FILE;type=application/vnd.android.package-archive" \
-              "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id")
 
-            FILE_ID=$(echo "$RESPONSE" | jq -r '.id')
+            curl -s \
+            -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -F "metadata={\"name\":\"$NAME\", \"parents\":[\"$VERSION_FOLDER_ID\"]};type=application/json;charset=UTF-8" \
+            -F "file=@$FILE;type=application/vnd.android.package-archive" \
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id" \
+            > /tmp/gdrive_response.json
+
+            FILE_ID=$(jq -r '.id' /tmp/gdrive_response.json)
 
             if [[ -z "$FILE_ID" || "$FILE_ID" == "null" ]]; then
               echo "❌ Upload failed"
-              echo "$RESPONSE"
+              cat /tmp/gdrive_response.json
               exit 1
             fi
 
-            echo "FILE_ID=$FILE_ID" >> $GITHUB_ENV
-            echo "✅ Uploaded: $NAME (ID: $FILE_ID)"
+          echo "FILE_ID=$FILE_ID" >> $GITHUB_ENV
+          echo "✅ Uploaded: $NAME (ID: $FILE_ID)"
+
           }
 
           upload_to_gdrive "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk" "aaps-${VERSION}${VERSION_SUFFIX}-${BUILD_TIMESTAMP}.apk"
