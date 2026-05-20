@@ -71,6 +71,14 @@ jobs:
             Branche de travail : `sync-master`
           base: master
           delete-branch: true
+          
+      - name: Notify Discord about merge conflict
+        if: steps.conflicts_master.outputs.conflicts == 'true'
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"⚠️ Merge conflict détecté sur la branche **master** du fork AndroidAPS ! Une PR a été créée pour résolution.\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_SYNC }}
 
   sync-dev:
     name: Sync dev branch
@@ -138,3 +146,12 @@ jobs:
             Branche de travail : `sync-dev`
           base: dev
           delete-branch: true
+          
+      - name: Notify Discord about merge conflict
+        if: steps.conflicts_dev.outputs.conflicts == 'true'
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"⚠️ Merge conflict détecté sur la branche **dev** du fork AndroidAPS ! Une PR a été créée pour résolution.\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_SYNC }}
+
