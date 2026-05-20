@@ -1,6 +1,9 @@
 name: Branch CI
 
 on:
+  push:
+    branches:
+      - dev
   workflow_dispatch:
     inputs:
       buildVariant:
@@ -158,7 +161,13 @@ jobs:
 
       - name: Set BUILD_VARIANT
         run: |
-          BUILD_VARIANT="${{ github.event.inputs.buildVariant }}"
+          if [ -z "${{ github.event.inputs.buildVariant }}" ]; then
+            # Mode automatique → build fullRelease
+            BUILD_VARIANT="fullRelease"
+          else
+            # Mode manuel → utiliser l’input
+            BUILD_VARIANT="${{ github.event.inputs.buildVariant }}"
+          fi
           echo "BUILD_VARIANT=$BUILD_VARIANT" >> $GITHUB_ENV
           VARIANT_FLAVOR=$(echo "$BUILD_VARIANT" | sed -E 's/(Release|Debug)$//' | tr '[:upper:]' '[:lower:]')
           VARIANT_TYPE=$(echo "$BUILD_VARIANT" | grep -oE '(Release|Debug)$' | tr '[:upper:]' '[:lower:]')
@@ -205,11 +214,16 @@ jobs:
               -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
               -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
 
+      - name: Generate build timestamp
+        run: |
+          BUILD_TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+          echo "BUILD_TIMESTAMP=$BUILD_TIMESTAMP" >> $GITHUB_ENV
+
       - name: Rename APKs with version
         run: |
-          mv app/build/outputs/apk/${{ env.VARIANT_FLAVOR }}/${{ env.VARIANT_TYPE }}/*.apk aaps-${{ env.VERSION }}${{ env.VERSION_SUFFIX }}.apk
-          mv wear/build/outputs/apk/${{ env.VARIANT_FLAVOR }}/${{ env.VARIANT_TYPE }}/*.apk aaps-wear-${{ env.VERSION }}${{ env.VERSION_SUFFIX }}.apk
-
+          mv app/build/outputs/apk/${{ env.VARIANT_FLAVOR }}/${{ env.VARIANT_TYPE }}/*.apk aaps-${{ env.VERSION }}${{ env.VERSION_SUFFIX }}-${{ env.BUILD_TIMESTAMP }}.apk
+          mv wear/build/outputs/apk/${{ env.VARIANT_FLAVOR }}/${{ env.VARIANT_TYPE }}/*.apk aaps-wear-${{ env.VERSION }}${{ env.VERSION_SUFFIX }}-${{ env.BUILD_TIMESTAMP }}.apk
+          
       - name: Upload APKs to Google Drive
         run: |
           set -e
