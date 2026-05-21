@@ -23,6 +23,7 @@ on:
 
 jobs:
   build:
+    if: github.actor != 'github-actions[bot]'
     name: Build AAPS
     runs-on: ubuntu-latest
     steps:
