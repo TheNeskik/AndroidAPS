@@ -25,7 +25,7 @@ on:
 
 jobs:
   build:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && github.event.client_payload.branch == 'master'
     name: Build AAPS
     runs-on: ubuntu-latest
     steps:
