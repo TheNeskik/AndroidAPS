@@ -56,8 +56,9 @@ jobs:
         if: steps.conflicts_master.outputs.conflicts == 'false'
         run: |
           if ! git diff origin/master..sync-master --quiet; then
-            git push origin sync-master:master
+            git push https://x-access-token:${{ secrets.PAT_SYNC }}@github.com/TheNeskik/AndroidAPS.git sync-master:master
           fi
+
 
       - name: Create PR on conflict
         if: steps.conflicts_master.outputs.conflicts == 'true'
@@ -131,8 +132,9 @@ jobs:
         if: steps.conflicts_dev.outputs.conflicts == 'false'
         run: |
           if ! git diff origin/dev..sync-dev --quiet; then
-            git push origin sync-dev:dev
+            git push https://x-access-token:${{ secrets.PAT_SYNC }}@github.com/TheNeskik/AndroidAPS.git sync-dev:dev
           fi
+
 
       - name: Create PR on conflict
         if: steps.conflicts_dev.outputs.conflicts == 'true'
