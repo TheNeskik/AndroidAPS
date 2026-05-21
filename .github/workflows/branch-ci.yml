@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+  repository_dispatch:
+    types: [sync_build]
   workflow_dispatch:
     inputs:
       buildVariant:
@@ -337,7 +339,7 @@ jobs:
           curl -H "Content-Type: application/json" \
                -X POST \
                -d "{
-                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n⬇️ Téléchargement Full : ${{ env.FULL_URL }}\"
+                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\nType de build: Master\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n⬇️ Téléchargement Full : ${{ env.FULL_URL }}\"
                    }" \
                ${{ secrets.DISCORD_WEBHOOK_BUILD }}
 
