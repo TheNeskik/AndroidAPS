@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - dev
+  repository_dispatch:
+    types: [sync_build]
   workflow_dispatch:
     inputs:
       buildVariant:
