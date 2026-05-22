@@ -25,7 +25,15 @@ on:
 
 jobs:
   build:
-    if: github.actor != 'github-actions[bot]' && github.event.client_payload.branch == 'dev'
+    # Conditions unifiées :
+    # 1. repository_dispatch → build la branche indiquée dans le payload
+    # 2. push → build la branche pushée
+    # 3. workflow_dispatch → build manuel toujours autorisé
+    if: >
+      (github.event_name == 'repository_dispatch' &&
+       github.event.client_payload.branch == github.ref_name) ||
+      (github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch')
     name: Build AAPS
     runs-on: ubuntu-latest
     steps:
