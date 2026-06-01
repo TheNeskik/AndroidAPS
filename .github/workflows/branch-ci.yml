@@ -165,6 +165,9 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v5
       
+      - name: Fetch build tags
+        run: git fetch --tags --depth=1
+      
       - name: Get last build tag
         id: last_tag
         run: |
