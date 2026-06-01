@@ -400,13 +400,35 @@ jobs:
 
       
       - name: Notify Discord about new APK
+        env:
+          VERSION: ${{ env.VERSION }}
+          VERSION_SUFFIX: ${{ env.VERSION_SUFFIX }}
+          BUILD_TIMESTAMP: ${{ env.BUILD_TIMESTAMP }}
+          FULL_URL: ${{ env.FULL_URL }}
+          AI_SUMMARY: ${{ steps.ai_changelog.outputs.summary }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_BUILD }}
         run: |
-          curl -H "Content-Type: application/json" \
-               -X POST \
-               -d "{
-                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n\n📝 **Changelog**:\n${{ steps.ai_changelog.outputs.summary }}\n\n⬇️ Téléchargement Full : ${{ env.FULL_URL }}\"
-                   }" \
-               ${{ secrets.DISCORD_WEBHOOK_BUILD }}
+          PAYLOAD=$(jq -n \
+            --arg version "$VERSION$VERSION_SUFFIX" \
+            --arg ts "$BUILD_TIMESTAMP" \
+            --arg summary "$AI_SUMMARY" \
+            --arg url "$FULL_URL" \
+            '{
+              content: ("🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **" + $version + "**\n🕒 Build: **" + $ts + "**\n\n📝 **Changelog** :\n" + $summary + "\n\n⬇️ Téléchargement Full : " + $url)
+            }')
+
+          HTTP_CODE=$(curl -s -o /tmp/discord_response.json -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            -d "$PAYLOAD" \
+            "$DISCORD_WEBHOOK")
+
+          if [ "$HTTP_CODE" != "204" ]; then
+            echo "⚠️ Discord webhook returned HTTP $HTTP_CODE"
+            cat /tmp/discord_response.json
+          else
+            echo "✅ Discord notification sent."
+          fi
                
       - name: Create build tag
         run: |
