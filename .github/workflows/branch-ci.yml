@@ -164,6 +164,63 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v5
+      
+      - name: Get last build tag
+        id: last_tag
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 --match "build-*" || echo "")
+          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Get commit log since last build
+        id: changelog
+        run: |
+          if [ -z "${{ steps.last_tag.outputs.last_tag }}" ]; then
+            echo "log=First build, no previous changelog." >> $GITHUB_OUTPUT
+          else
+            LOG=$(git log ${{ steps.last_tag.outputs.last_tag }}..HEAD --pretty=format:"- %s")
+            echo "log<<EOF" >> $GITHUB_OUTPUT
+            echo "$LOG" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate AI changelog (Claude)
+        id: ai_changelog
+        env:
+          RAW_LOG: ${{ steps.changelog.outputs.log }}
+          CLAUDE_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          PAYLOAD=$(jq -n \
+          --arg log "$RAW_LOG" \
+          '{
+            model: "claude-haiku-4-5",
+            max_tokens: 300,
+            messages: [{
+              role: "user",
+              content: ("Résume en changelog clair et concis (max 500 caractères) cette liste de commits : " + $log)
+            }]
+          }')
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $CLAUDE_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            SUMMARY="Changelog indisponible (erreur HTTP $HTTP_CODE)."
+          else
+            SUMMARY=$(echo "$BODY" | jq -r '.content[0].text // empty')
+            if [ -z "$SUMMARY" ]; then
+              SUMMARY="Changelog indisponible (réponse vide)."
+            fi
+          fi
+
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Load jdk versions
         run: |
@@ -347,8 +404,15 @@ jobs:
           curl -H "Content-Type: application/json" \
                -X POST \
                -d "{
-                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n⬇️ Téléchargement Full : ${{ env.FULL_URL }}\"
+                     \"content\": \"🎉 Nouveau build AndroidAPS disponible !\n📦 Version: **${{ env.VERSION }}${{ env.VERSION_SUFFIX }}**\n🕒 Build: **${{ env.BUILD_TIMESTAMP }}**\n\n📝 **Changelog**:\n${{ steps.ai_changelog.outputs.summary }}\n\n⬇️ Téléchargement Full : ${{ env.FULL_URL }}\"
                    }" \
                ${{ secrets.DISCORD_WEBHOOK_BUILD }}
+               
+      - name: Create build tag
+        run: |
+          TAG_NAME="build-${{ env.BUILD_TIMESTAMP }}"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+
 
 
