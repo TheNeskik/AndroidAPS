@@ -171,8 +171,9 @@ jobs:
       - name: Get last build tag
         id: last_tag
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 --match "build-*" || echo "")
+          LAST_TAG=$(git tag --list "build-*" --sort=-version:refname | head -n1)
           echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+          echo "Last build tag: $LAST_TAG"
       
       - name: Get commit log since last build
         id: changelog
@@ -434,9 +435,19 @@ jobs:
           fi
                
       - name: Create build tag
+        env:
+          AI_SUMMARY: ${{ steps.ai_changelog.outputs.summary }}
+          RAW_LOG: ${{ steps.changelog.outputs.log }}
+          BUILD_TIMESTAMP: ${{ env.BUILD_TIMESTAMP }}
         run: |
-          TAG_NAME="build-${{ env.BUILD_TIMESTAMP }}"
-          git tag "$TAG_NAME"
+          TAG_NAME="build-${BUILD_TIMESTAMP}"
+
+          MESSAGE=$(jq -rn \
+            --arg summary "$AI_SUMMARY" \
+            --arg log "$RAW_LOG" \
+            '"Résumé\n\n" + $summary + "\n\nCommits\n\n" + $log')
+
+          git tag -a "$TAG_NAME" -m "$MESSAGE"
           git push origin "$TAG_NAME"
 
 
