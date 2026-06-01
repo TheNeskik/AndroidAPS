@@ -440,6 +440,8 @@ jobs:
           RAW_LOG: ${{ steps.changelog.outputs.log }}
           BUILD_TIMESTAMP: ${{ env.BUILD_TIMESTAMP }}
         run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
           TAG_NAME="build-${BUILD_TIMESTAMP}"
 
           MESSAGE=$(jq -rn \
