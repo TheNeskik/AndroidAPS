@@ -167,7 +167,17 @@ jobs:
       
       - name: Fetch build tags
         run: git fetch --tags --depth=1
-      
+        
+      - name: Deepen history since last tag
+        run: |
+          LAST_TAG=$(git tag --list "build-*" --sort=-version:refname | head -n1)
+          if [ -n "$LAST_TAG" ]; then
+            SINCE=$(git log -1 --format=%ci "refs/tags/$LAST_TAG")
+            git fetch --shallow-since="$SINCE"
+          else
+            git fetch --unshallow
+          fi
+          
       - name: Get last build tag
         id: last_tag
         run: |
