@@ -19,6 +19,7 @@ import app.aaps.core.interfaces.aps.Loop
 import app.aaps.core.interfaces.automation.Automation
 import app.aaps.core.interfaces.bolus.BatchAction
 import app.aaps.core.interfaces.bolus.WizardBolusExecutor
+import app.aaps.core.interfaces.configuration.Config
 import app.aaps.core.interfaces.constraints.ConstraintsChecker
 import app.aaps.core.interfaces.db.PersistenceLayer
 import app.aaps.core.interfaces.di.ApplicationScope
@@ -68,6 +69,7 @@ import kotlin.math.ceil
 class WizardBolusExecutorImpl @Inject constructor(
     private val aapsLogger: AAPSLogger,
     private val rh: ResourceHelper,
+    private val config: Config,
     private val quickWizard: QuickWizard,
     private val bolusWizardProvider: Provider<BolusWizard>,
     private val profileFunction: ProfileFunction,
@@ -151,6 +153,12 @@ class WizardBolusExecutorImpl @Inject constructor(
     }
 
     override suspend fun prepareQuickWizard(guid: String): WizardBolusExecutor.PrepareResult {
+        // Reject before plugins are wired up: a remote prepare (client-control) can land while the master is still
+        // initializing — before ConfigBuilder.initialize() ran verifySelectionInCategories(). At that point activeAPS
+        // is still null (unlike activePump, which has an init-time fallback), so getProfile() builds a profile whose
+        // BolusWizard.doCalc would hit ProfileSealed's "APS not defined" guard. Mirrors the appInitialized gate every
+        // other external trigger (wear, automation, widgets) already has.
+        if (!config.appInitialized) return WizardBolusExecutor.PrepareResult.Error(rh.gs(R.string.initializing))
         runningModeGuard.rejectionMessage(PumpCommandGate.CommandKind.BOLUS)?.let { return WizardBolusExecutor.PrepareResult.Error(it) }
         val actualBg = iobCobCalculator.ads.actualBg()
         val profile = profileFunction.getProfile()
@@ -191,6 +199,9 @@ class WizardBolusExecutorImpl @Inject constructor(
     }
 
     override suspend fun prepareWizard(inputs: WizardBolusExecutor.WizardInputs): WizardBolusExecutor.PrepareResult {
+        // Same pre-init guard as prepareQuickWizard: doCalc would otherwise hit ProfileSealed's "APS not defined" guard
+        // when a remote prepare arrives before verifySelectionInCategories() has populated activeAPS.
+        if (!config.appInitialized) return WizardBolusExecutor.PrepareResult.Error(rh.gs(R.string.initializing))
         runningModeGuard.rejectionMessage(PumpCommandGate.CommandKind.BOLUS)?.let { return WizardBolusExecutor.PrepareResult.Error(it) }
         // Resolve the dialog's profile selection: null → the master's active profile (kept dynamic — the master is
         // authoritative); a name → that stored profile (a client/watch relays a name the master owns), wrapped so
@@ -742,10 +753,21 @@ class WizardBolusExecutorImpl @Inject constructor(
     /** The RM line(s) for any batch (wear / client / phone) — the target mode title + an optional duration. */
     private suspend fun buildRmLine(rm: BatchAction.RunningMode): List<ConfirmationLine> {
         val out = mutableListOf<ConfirmationLine>()
-        out += ConfirmationLine(ConfirmationRole.PRIMARY, rh.gs(R.string.confirmation_line, rh.gs(R.string.running_mode), rmModeTitle(rm.mode)))
+        out += ConfirmationLine(rmModeRole(rm.mode), rmModeTitle(rm.mode))
         if (rm.durationMinutes > 0)
-            out += ConfirmationLine(ConfirmationRole.NORMAL, rh.gs(R.string.confirmation_line, rh.gs(R.string.duration), rh.gs(R.string.format_mins, rm.durationMinutes)))
+            out += ConfirmationLine(ConfirmationRole.NORMAL, rh.gs(R.string.confirmation_line, rh.gs(R.string.duration), formatMinutesAsDuration(rm.durationMinutes, rh)))
         return out
+    }
+
+    private fun rmModeRole(mode: RM.Mode): ConfirmationRole = when (mode) {
+        RM.Mode.CLOSED_LOOP       -> ConfirmationRole.LOOP_CLOSED
+        RM.Mode.CLOSED_LOOP_LGS   -> ConfirmationRole.LOOP_LGS
+        RM.Mode.OPEN_LOOP         -> ConfirmationRole.LOOP_OPEN
+        RM.Mode.DISABLED_LOOP     -> ConfirmationRole.LOOP_DISABLED
+        RM.Mode.SUSPENDED_BY_USER -> ConfirmationRole.LOOP_SUSPENDED
+        RM.Mode.DISCONNECTED_PUMP -> ConfirmationRole.LOOP_DISCONNECTED
+        RM.Mode.RESUME            -> ConfirmationRole.LOOP_CLOSED
+        else                      -> ConfirmationRole.PRIMARY
     }
 
     /** Localized title for a target running mode (RESUME resolves to reconnect vs resume by the current loop state). */
